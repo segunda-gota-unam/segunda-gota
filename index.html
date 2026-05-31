@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Segunda Gota - Impacto Hídrico</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Fuente de Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Encabezado con Logo -->
+    <header>
+        <div class="logo-container">
+            <!-- Reemplaza "logo.png" con la ruta real de su logo -->
+            <img src="logo.png" alt="Logo Segunda Gota" class="logo">
+        </div>
+    </header>
+
+    <!-- Sección Principal: Litros Ahorrados -->
+    <section class="hero">
+        <h1>Impacto en la Facultad</h1>
+        <p>Gracias a nuestra PTAR modular, hemos logrado salvar:</p>
+        <div class="counter-box">
+            <span id="litros-contador" class="numero" data-target="15000">0</span>
+            <span class="unidad">Litros de Agua Potable</span>
+        </div>
+        <p class="subtext">Cada gota cuenta una nueva historia.</p>
+    </section>
+
+    <!-- Sección Educativa -->
+    <section class="info-educativa">
+        <h2>¿Por qué usar agua tratada?</h2>
+        <div class="cards-container">
+            <div class="card">
+                <h3>💧 Estrés Hídrico</h3>
+                <p>Nuestras instalaciones enfrentan escasez. Usar agua potable en sanitarios es un lujo insostenible. Al reciclar, aliviamos la red municipal.</p>
+            </div>
+            <div class="card">
+                <h3>♻️ Economía Circular</h3>
+                <p>El agua residual se trata física y biológicamente in-situ. Pasa de ser un desecho a un recurso útil e inodoro.</p>
+            </div>
+            <div class="card">
+                <h3>📜 Calidad Garantizada</h3>
+                <p>Cumplimos estrictamente con la NOM-001 de SEMARNAT. El agua que usamos es biológicamente segura y perfecta para fluxómetros.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Formulario de Quejas y Sugerencias -->
+    <section class="contacto">
+        <h2>Tu opinión nos ayuda a mejorar</h2>
+        <p>¿Notaste alguna anomalía o tienes una sugerencia? Déjanos tus comentarios.</p>
+        
+        <form id="feedback-form">
+            <div class="form-group">
+                <label for="nombre">Nombre (opcional)</label>
+                <input type="text" id="nombre" name="nombre" placeholder="Ej. Juan Pérez">
+            </div>
+            <div class="form-group">
+                <label for="tipo">Tipo de mensaje</label>
+                <select id="tipo" name="tipo">
+                    <option value="sugerencia">Sugerencia</option>
+                    <option value="queja">Queja / Falla en sanitario</option>
+                    <option value="duda">Duda sobre el proceso</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="mensaje">Mensaje</label>
+                <textarea id="mensaje" name="mensaje" rows="4" placeholder="Escribe aquí tu reporte..." required></textarea>
+            </div>
+            <button type="submit" class="btn-submit">Enviar Comentarios</button>
+        </form>
+    </section>
+
+    <!-- Pie de página -->
+    <footer>
+        <p><strong>Segunda Gota</strong>
+        <p>Contacto corporativo: hola@segundagota.com.mx</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

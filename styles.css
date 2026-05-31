@@ -1,0 +1,168 @@
+/* Variables de color de Segunda Gota */
+:root {
+    --azul-marino: #003366;
+    --azul-claro: #00a8e8;
+    --blanco: #ffffff;
+    --gris-fondo: #f4f7f6;
+    --texto-oscuro: #333333;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Montserrat', sans-serif;
+}
+
+body {
+    background-color: var(--gris-fondo);
+    color: var(--texto-oscuro);
+    line-height: 1.6;
+}
+
+header {
+    background-color: var(--blanco);
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.logo {
+    max-width: 200px;
+}
+
+/* Sección Hero / Contador */
+.hero {
+    background: linear-gradient(135deg, var(--azul-marino), var(--azul-claro));
+    color: var(--blanco);
+    text-align: center;
+    padding: 50px 20px;
+}
+
+.hero h1 {
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.counter-box {
+    margin: 30px 0;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.numero {
+    font-size: 4rem;
+    font-weight: 800;
+    display: block;
+}
+
+.unidad {
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Sección Educativa */
+.info-educativa {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.info-educativa h2 {
+    color: var(--azul-marino);
+    margin-bottom: 30px;
+}
+
+.cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.card {
+    background-color: var(--blanco);
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: left;
+    border-left: 5px solid var(--azul-claro);
+}
+
+.card h3 {
+    color: var(--azul-marino);
+    margin-bottom: 10px;
+}
+
+/* Sección Formulario */
+.contacto {
+    background-color: var(--blanco);
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.contacto h2 {
+    color: var(--azul-marino);
+    margin-bottom: 10px;
+}
+
+#feedback-form {
+    max-width: 500px;
+    margin: 30px auto 0;
+    text-align: left;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: var(--azul-marino);
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--azul-claro);
+    box-shadow: 0 0 5px rgba(0, 168, 232, 0.3);
+}
+
+.btn-submit {
+    width: 100%;
+    background-color: var(--azul-marino);
+    color: var(--blanco);
+    border: none;
+    padding: 15px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-submit:hover {
+    background-color: var(--azul-claro);
+}
+
+/* Footer */
+footer {
+    background-color: #222;
+    color: #ccc;
+    text-align: center;
+    padding: 20px;
+    font-size: 0.9rem;
+}
