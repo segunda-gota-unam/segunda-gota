@@ -31,3 +31,50 @@ document.addEventListener('DOMContentLoaded', () => {
         form.reset(); // Limpia el formulario
     });
 });
+document.addEventListener('DOMContentLoaded', () => {
+    // Referencias al Menú Lateral
+    const menuToggle = document.getElementById('menu-toggle');
+    const closeMenu = document.getElementById('close-menu');
+    const sidebar = document.getElementById('sidebar-menu');
+    
+    // Referencias al Modal (Folleto)
+    const btnTransparencia = document.getElementById('btn-transparencia');
+    const btnInicio = document.getElementById('btn-inicio');
+    const modalInfo = document.getElementById('modal-info');
+    const closeModal = document.getElementById('close-modal');
+
+    // Abrir menú lateral
+    menuToggle.addEventListener('click', () => {
+        sidebar.style.width = '250px';
+    });
+
+    // Cerrar menú lateral
+    closeMenu.addEventListener('click', () => {
+        sidebar.style.width = '0';
+    });
+
+    // Cerrar menú al hacer clic en "Inicio"
+    btnInicio.addEventListener('click', (e) => {
+        e.preventDefault();
+        sidebar.style.width = '0';
+    });
+
+    // Abrir Modal de Transparencia desde el menú
+    btnTransparencia.addEventListener('click', (e) => {
+        e.preventDefault();
+        sidebar.style.width = '0'; // Cierra el menú lateral
+        modalInfo.style.display = 'block'; // Muestra el modal
+    });
+
+    // Cerrar Modal desde la "X"
+    closeModal.addEventListener('click', () => {
+        modalInfo.style.display = 'none';
+    });
+
+    // Cerrar Modal al hacer clic fuera del contenido
+    window.addEventListener('click', (e) => {
+        if (e.target == modalInfo) {
+            modalInfo.style.display = 'none';
+        }
+    });
+});
