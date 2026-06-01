@@ -166,10 +166,10 @@ footer {
     padding: 20px;
     font-size: 0.9rem;
 }
-/* --- ESTILOS DEL HEADER Y BOTÓN HAMBURGUESA --- */
-header {
+/* --- ESTILOS CORREGIDOS DEL HEADER --- */
+.main-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center; /* Esto fuerza al logo a quedarse en el centro exacto */
     align-items: center;
     padding: 15px 30px;
     background-color: #ffffff;
@@ -179,12 +179,19 @@ header {
     z-index: 100;
 }
 
+.main-header .logo {
+    height: 60px; /* Ajusta este valor si quieres el logo más grande o pequeño */
+    width: auto;
+}
+
 .hamburger-btn {
+    position: absolute; /* Evita que el botón empuje al logo hacia la izquierda */
+    right: 30px; /* Lo clava en el lado derecho de la pantalla */
     font-size: 28px;
     background: none;
     border: none;
     cursor: pointer;
-    color: #004d99; /* Azul marino Segunda Gota */
+    color: #004d99; /* Azul marino de Segunda Gota */
 }
 
 /* --- ESTILOS DEL MENÚ LATERAL (SIDEBAR) --- */
