@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Segunda Gota — Proceso de Tratamiento de Agua</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* === RESET & BASE === */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --blue-900:#0c2d4a;--blue-800:#1a4a7a;--blue-700:#1e5a94;
+  --blue-500:#4a90d9;--blue-300:#7eb8f0;--blue-100:#d0e6fa;
+  --gray-900:#1a1d23;--gray-700:#3a3f4b;--gray-500:#6b7280;
+  --gray-300:#b0b5bf;--gray-100:#e8eaed;--gray-50:#f4f5f7;
+  --brown-dirty:#8b6914;--brown-water:#a07828;--green-ok:#2d8a56;
+  --stage-dur:8s;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'DM Sans',sans-serif;background:var(--gray-900);
+  color:var(--gray-100);overflow-x:hidden;
+}
+
+/* === GLOBAL WATER PARTICLE LAYER === */
+.water-particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.12}
+.water-particles span{
+  position:absolute;display:block;width:4px;height:4px;
+  background:var(--blue-500);border-radius:50%;
+  animation:floatUp 6s linear infinite;
+}
+@keyframes floatUp{
+  0%{transform:translateY(100vh) scale(0);opacity:0}
+  10%{opacity:1}
+  90%{opacity:1}
+  100%{transform:translateY(-10vh) scale(1);opacity:0}
+}
+
+/* === HEADER / LOGO === */
+.brand-header{
+  position:fixed;top:0;left:0;width:100%;z-index:100;
+  padding:1rem 2rem;display:flex;align-items:center;gap:.75rem;
+  background:linear-gradient(180deg,rgba(12,45,74,.95) 0%,rgba(12,45,74,0) 100%);
+  pointer-events:none;
+}
+.brand-header svg{width:36px;height:36px}
+.brand-header h1{
+  font-family:'Space Mono',monospace;font-size:.85rem;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--blue-300);
+  font-weight:700;
+}
+
+/* === PROGRESS BAR === */
+.progress-track{
+  position:fixed;top:0;left:0;width:100%;height:3px;
+  background:rgba(255,255,255,.08);z-index:200;
+}
+.progress-fill{
+  height:100%;background:linear-gradient(90deg,var(--blue-500),var(--blue-300));
+  width:0%;transition:width .6s cubic-bezier(.4,0,.2,1);
+}
+
+/* === STAGE NAV DOTS === */
+.stage-nav{
+  position:fixed;right:1.5rem;top:50%;transform:translateY(-50%);
+  z-index:150;display:flex;flex-direction:column;gap:.6rem;
+}
+.stage-nav button{
+  width:12px;height:12px;border-radius:50%;border:2px solid var(--blue-500);
+  background:transparent;cursor:pointer;transition:all .3s;
+  position:relative;
+}
+.stage-nav button.active{background:var(--blue-500);box-shadow:0 0 12px var(--blue-500)}
+.stage-nav button .tooltip{
+  position:absolute;right:22px;top:50%;transform:translateY(-50%);
+  background:var(--blue-800);color:var(--blue-100);padding:.25rem .6rem;
+  border-radius:4px;font-size:.65rem;white-space:nowrap;opacity:0;
+  pointer-events:none;transition:opacity .2s;font-family:'Space Mono',monospace;
+}
+.stage-nav button:hover .tooltip{opacity:1}
+
+/* === CONTROLS === */
+.controls{
+  position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);
+  z-index:150;display:flex;align-items:center;gap:1rem;
+  background:rgba(12,45,74,.85);backdrop-filter:blur(12px);
+  border:1px solid rgba(74,144,217,.25);border-radius:2rem;
+  padding:.5rem 1.5rem;
+}
+.controls button{
+  background:none;border:none;color:var(--blue-300);cursor:pointer;
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:all .2s;font-size:1.1rem;
+}
+.controls button:hover{background:rgba(74,144,217,.2)}
+.controls .stage-label{
+  font-family:'Space Mono',monospace;font-size:.7rem;
+  color:var(--blue-300);min-width:80px;text-align:center;
+}
+
+/* === STAGE CONTAINER === */
+.stage{
+  width:100%;min-height:100vh;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  padding:5rem 2rem;overflow:hidden;
+}
+.stage-inner{
+  max-width:1100px;width:100%;display:grid;
+  grid-template-columns:1fr 1.2fr;gap:3rem;align-items:center;
+  opacity:0;transform:translateY(40px);
+  transition:opacity .8s cubic-bezier(.4,0,.2,1),transform .8s cubic-bezier(.4,0,.2,1);
+}
+.stage.visible .stage-inner{opacity:1;transform:translateY(0)}
+
+.stage-text{z-index:2}
+.stage-number{
+  font-family:'Space Mono',monospace;font-size:.7rem;
+  color:var(--blue-500);letter-spacing:.2em;margin-bottom:.5rem;
+  text-transform:uppercase;
+}
+.stage-title{
+  font-size:clamp(1.4rem,3vw,2.2rem);font-weight:700;
+  color:#fff;line-height:1.2;margin-bottom:1rem;
+}
+.stage-title span{color:var(--blue-500)}
+.stage-desc{
+  font-size:.95rem;line-height:1.7;color:var(--gray-300);max-width:440px;
+}
+
+/* === SVG DIAGRAM AREA === */
+.diagram{
+  position:relative;width:100%;aspect-ratio:4/3;
+  background:rgba(26,74,122,.06);border:1px solid rgba(74,144,217,.15);
+  border-radius:12px;overflow:hidden;
+}
+.diagram svg{width:100%;height:100%}
+
+/* === STAGE BACKGROUNDS === */
+.stage:nth-child(odd){background:var(--gray-900)}
+.stage:nth-child(even){background:linear-gradient(135deg,var(--gray-900) 0%,#0f2236 100%)}
+.stage::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 30% 70%,rgba(74,144,217,.06) 0%,transparent 60%);
+  pointer-events:none;
+}
+
+/* === WATER FLOW ANIMATIONS === */
+@keyframes flowRight{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+@keyframes flowDown{0%{transform:translateY(-100%)}100%{transform:translateY(200%)}}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+@keyframes bubbleUp{
+  0%{transform:translateY(0) scale(1);opacity:.7}
+  100%{transform:translateY(-30px) scale(.3);opacity:0}
+}
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+@keyframes pumpAction{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.85)}}
+@keyframes drip{
+  0%{transform:translateY(0);opacity:1}
+  80%{opacity:1}100%{transform:translateY(20px);opacity:0}
+}
+@keyframes shakeX{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+@keyframes fadeInScale{0%{transform:scale(.8);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes waveMove{0%{d:path("M0,20 Q25,10 50,20 T100,20")}50%{d:path("M0,20 Q25,30 50,20 T100,20")}100%{d:path("M0,20 Q25,10 50,20 T100,20")}}
+@keyframes particleFlow{
+  0%{offset-distance:0%}
+  100%{offset-distance:100%}
+}
+
+/* color classes for water */
+.water-dirty{fill:#a07828;stroke:#8b6914}
+.water-semi{fill:#6a8a5a;stroke:#5a7a4a}
+.water-clear{fill:var(--blue-500);stroke:var(--blue-700)}
+.water-clean{fill:var(--blue-300);stroke:var(--blue-500)}
+
+/* pipe styling */
+.pipe{fill:var(--gray-500);stroke:var(--gray-700);stroke-width:1}
+.tank{fill:var(--gray-700);stroke:var(--gray-500);stroke-width:1.5}
+.equipment{fill:var(--gray-500);stroke:var(--gray-300);stroke-width:1}
+
+/* flow particle */
+.flow-particle{
+  animation:particleFlow 2s linear infinite;
+}
+
+/* === INTRO OVERLAY === */
+.intro-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:var(--blue-900);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity .8s,visibility .8s;
+}
+.intro-overlay.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.intro-overlay svg{width:80px;height:80px;margin-bottom:1.5rem;animation:fadeInScale 1s ease}
+.intro-overlay h2{
+  font-family:'Space Mono',monospace;font-size:1.6rem;
+  color:var(--blue-300);letter-spacing:.1em;animation:fadeInScale 1s ease .2s both;
+}
+.intro-overlay p{
+  color:var(--gray-300);margin-top:.75rem;font-size:.9rem;
+  animation:fadeInScale 1s ease .4s both;
+}
+.intro-overlay .start-btn{
+  margin-top:2rem;padding:.75rem 2.5rem;
+  background:var(--blue-500);color:#fff;border:none;
+  border-radius:2rem;font-family:'Space Mono',monospace;
+  font-size:.85rem;cursor:pointer;letter-spacing:.1em;
+  animation:fadeInScale 1s ease .6s both;
+  transition:background .2s;
+}
+.intro-overlay .start-btn:hover{background:var(--blue-700)}
+
+/* === RESPONSIVE === */
+@media(max-width:768px){
+  .stage-inner{grid-template-columns:1fr;gap:1.5rem}
+  .stage{padding:6rem 1.5rem 3rem}
+  .stage-nav{display:none}
+  .controls{bottom:.75rem;padding:.4rem 1rem}
+  .diagram{aspect-ratio:1/1}
+}
+</style>
+</head>
+<body>
+
+<!-- FLOATING WATER PARTICLES -->
+<div class="water-particles" id="particles"></div>
+
+<!-- PROGRESS BAR -->
+<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+<!-- BRAND HEADER -->
+<div class="brand-header">
+  <svg viewBox="0 0 100 100" fill="none">
+    <path d="M50 8 C50 8 20 45 20 60 C20 77 33 90 50 90 C67 90 80 77 80 60 C80 45 50 8 50 8Z" fill="none" stroke="#7eb8f0" stroke-width="3"/>
+    <path d="M32 68 C32 58 42 52 50 58 C58 52 68 58 68 68 C68 78 58 84 50 78 C42 84 32 78 32 68Z" fill="none" stroke="#4a90d9" stroke-width="2.5"/>
+  </svg>
+  <h1>Segunda Gota</h1>
+</div>
+
+<!-- STAGE NAV -->
+<div class="stage-nav" id="stageNav"></div>
+
+<!-- INTRO OVERLAY -->
+<div class="intro-overlay" id="introOverlay">
+  <svg viewBox="0 0 100 100" fill="none">
+    <path d="M50 8 C50 8 20 45 20 60 C20 77 33 90 50 90 C67 90 80 77 80 60 C80 45 50 8 50 8Z" fill="none" stroke="#7eb8f0" stroke-width="3"/>
+    <path d="M32 68 C32 58 42 52 50 58 C58 52 68 58 68 68 C68 78 58 84 50 78 C42 84 32 78 32 68Z" fill="none" stroke="#4a90d9" stroke-width="2.5"/>
+  </svg>
+  <h2>Segunda Gota</h2>
+  <p>Sistema Compacto de Reciclaje de Agua</p>
+  <button class="start-btn" onclick="startPresentation()">INICIAR RECORRIDO</button>
+</div>
+
+<!-- === STAGES === -->
+<main id="stagesContainer">
+
+<!-- STAGE 1 -->
+<section class="stage" data-stage="1">
+<div class="stage-inner">
+  <div class="stage-text">
+    <div class="stage-number">Etapa 01</div>
+    <h2 class="stage-title">Captación <span>In Situ</span></h2>
+    <p class="stage-desc">El agua residual fluye desde los lavabos e inodoros del edificio hacia los registros de captación. Una válvula de desvío redirige el flujo y una bomba sumergible lo extrae hacia el módulo de tratamiento Segunda Gota.</p>
+  </div>
+  <div class="diagram">
+    <svg viewBox="0 0 400 300" id="svg1">
+      <!-- Building -->
+      <rect x="20" y="20" width="100" height="140" rx="3" fill="#2a3040" stroke="#4a5568" stroke-width="1.5"/>
+      <text x="70" y="15" text-anchor="middle" fill="#7eb8f0" font-size="9" font-family="Space Mono">EDIFICIO</text>
+      <!-- Windows -->
+      <rect x="35" y="35" width="18" height="14" rx="1" fill="#1a2530" stroke="#4a90d9" stroke-width=".5"/>
+      <rect x="65" y="35" width="18" height="14" rx="1" fill="#1a2530" stroke="#4a90d9" stroke-width=".5"/>
+      <rect x="95" y="35" width="18" height="14" rx="1" fill="#1a2530" stroke="#4a90d9" stroke-width=".5"/>
+      <rect x="35" y="60" width="18" height="14" rx="1" fill="#1a2530" stroke="#4a90d9" stroke-width=".5"/>
+      <rect x="65" y="60" width="18" height="14" rx="1" fill="#1a2530" stroke="#4a90d9" stroke-width=".5"/>
+      <rect x="95" y="60" width="18" height="14" rx="1" fill="#1a2530" stroke="#4a90d9" stroke-width=".5"/>
+      <!-- Sink icon -->
+      <rect x="40" y="90" width="25" height="4" rx="1" fill="#6b7280"/>
+      <rect x="49" y="94" width="7" height="10" rx="0" fill="#6b7280"/>
+      <text x="52" y="115" text-anchor="middle" fill="#9ca3af" font-size="6">Lavabo</text>
+      <!-- Toilet icon -->
+      <rect x="80" y="88" width="16" height="18" rx="3" fill="#6b7280"/>
+      <rect x="83" y="85" width="10" height="5" rx="1" fill="#6b7280"/>
+      <text x="88" y="115" text-anchor="middle" fill="#9ca3af" font-size="6">WC</text>
+      <!-- Drain pipes from building -->
+      <rect x="50" y="130" width="6" height="40" rx="1" fill="#4a5568"/>
+      <rect x="86" y="130" width="6" height="40" rx="1" fill="#4a5568"/>
+      <!-- Horizontal collector pipe -->
+      <rect x="50" y="168" width="200" height="8" rx="2" fill="#4a5568" stroke="#6b7280" stroke-width="1"/>
+      <text x="150" y="165" text-anchor="middle" fill="#9ca3af" font-size="7">Colector Principal</text>
+      <!-- Flow particles in pipes -->
+      <circle r="3" fill="#a07828" opacity=".8"><animateMotion dur="2s" repeatCount="indefinite" path="M53,130 L53,172"/></circle>
+      <circle r="3" fill="#a07828" opacity=".8"><animateMotion dur="2.2s" repeatCount="indefinite" path="M89,130 L89,172"/></circle>
+      <circle r="2.5" fill="#a07828" opacity=".7"><animateMotion dur="3s" repeatCount="indefinite" path="M53,172 L250,172"/></circle>
+      <circle r="2.5" fill="#a07828" opacity=".7"><animateMotion dur="3.5s" repeatCount="indefinite" path="M80,172 L250,172"/></circle>
+      <!-- Diversion valve -->
+      <g transform="translate(200,164)">
+        <polygon points="0,0 16,8 0,16" fill="#d97706" stroke="#b45309" stroke-width="1">
+          <animateTransform attributeName="transform" type="rotate" from="0 8 8" to="-30 8 8" dur="2s" repeatCount="indefinite" values="0 8 8;-30 8 8;0 8 8" keyTimes="0;0.5;1"/>
+        </polygon>
+        <text x="8" y="26" text-anchor="middle" fill="#f59e0b" font-size="6" font-weight="bold">Válvula</text>
+      </g>
+      <!-- Diverted pipe going down -->
+      <rect x="213" y="178" width="6" height="50" rx="1" fill="#4a5568"/>
+      <!-- Submersible pump -->
+      <g transform="translate(200,228)">
+        <rect x="0" y="0" width="32" height="24" rx="3" fill="#1e5a94" stroke="#4a90d9" stroke-width="1.5">
+          <animate attributeName="opacity" values="1;.7;1" dur="1s" repeatCount="indefinite"/>
+        </rect>
+        <circle cx="16" cy="12" r="6" fill="none" stroke="#7eb8f0" stroke-width="1.5">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 12" to="360 16 12" dur="1s" repeatCount="indefinite"/>
+        </circle>
+        <line x1="16" y1="6" x2="16" y2="12" stroke="#7eb8f0" stroke-width="1.5">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 12" to="360 16 12" dur="1s" repeatCount="indefinite"/>
+        </line>
+        <text x="16" y="36" text-anchor="middle" fill="#7eb8f0" font-size="6">Bomba Sumergible</text>
+      </g>
+      <!-- Output pipe to treatment -->
+      <rect x="232" y="234" width="80" height="6" rx="1" fill="#4a5568"/>
+      <circle r="3" fill="#a07828" opacity=".8"><animateMotion dur="1.5s" repeatCount="indefinite" path="M216,172 L216,240"/></circle>
+      <circle r="3" fill="#a07828" opacity=".8"><animateMotion dur="2s" repeatCount="indefinite" path="M234,237 L312,237"/></circle>
+      <!-- Treatment module -->
+      <g transform="translate(310,210)">
+        <rect x="0" y="0" width="70" height="55" rx="5" fill="#1a4a7a" stroke="#4a90d9" stroke-width="2"/>
+        <text x="35" y="22" text-anchor="middle" fill="#7eb8f0" font-size="7" font-weight="bold">SEGUNDA</text>
+        <text x="35" y="33" text-anchor="middle" fill="#7eb8f0" font-size="7" font-weight="bold">GOTA</text>
+        <text x="35" y="46" text-anchor="middle" fill="#4a90d9" font-size="5">Módulo PTAR</text>
+      </g>
+      <!-- Water color legend -->
+      <circle cx="30" cy="280" r="5" fill="#a07828"/>
+      <text x="40" y="283" fill="#9ca3af" font-size="7">Agua residual</text>
+    </svg>
+  </div>
+</div>
+</section>
+
+<!-- STAGE 2 -->
+<section class="stage" data-stage="2">
+<div class="stage-inner">
+  <div class="stage-text">
+    <div class="stage-number">Etapa 02</div>
+    <h2 class="stage-title">Pretratamiento <span>Mecánico</span></h2>
+    <p class="stage-desc">El agua ingresa al sistema de cribado con rejillas finas que retienen sólidos gruesos — cabello, plásticos, residuos orgánicos. Posteriormente pasa por un desarenador que decanta arenas y protege los equipos posteriores.</p>
+  </div>
+  <div class="diagram">
+    <svg viewBox="0 0 400 300" id="svg2">
+      <!-- Input pipe -->
+      <rect x="10" y="100" width="60" height="8" rx="2" fill="#4a5568"/>
+      <text x="40" y="96" text-anchor="middle" fill="#9ca3af" font-size="7">Entrada</text>
+      <!-- Flow particles -->
+      <circle r="3" fill="#a07828" opacity=".8"><animateMotion dur="1.5s" repeatCount="indefinite" path="M10,104 L70,104"/></circle>
+      <circle r="2" fill="#705a20" opacity=".6"><animateMotion dur="1.8s" repeatCount="indefinite" path="M10,104 L70,104"/></circle>
+      <!-- Screening unit -->
+      <g transform="translate(70,60)">
+        <rect x="0" y="0" width="100" height="90" rx="4" fill="#2a3040" stroke="#6b7280" stroke-width="1.5"/>
+        <text x="50" y="-6" text-anchor="middle" fill="#7eb8f0" font-size="8" font-weight="bold">CRIBADO</text>
+        <!-- Grill bars -->
+        <line x1="20" y1="5" x2="20" y2="85" stroke="#9ca3af" stroke-width="2"/>
+        <line x1="32" y1="5" x2="32" y2="85" stroke="#9ca3af" stroke-width="2"/>
+        <line x1="44" y1="5" x2="44" y2="85" stroke="#9ca3af" stroke-width="2"/>
+        <line x1="56" y1="5" x2="56" y2="85" stroke="#9ca3af" stroke-width="2"/>
+        <line x1="68" y1="5" x2="68" y2="85" stroke="#9ca3af" stroke-width="2"/>
+        <line x1="80" y1="5" x2="80" y2="85" stroke="#9ca3af" stroke-width="2"/>
+        <!-- Trapped solids -->
+        <circle cx="26" cy="30" r="4" fill="#705a20" opacity=".8"><animate attributeName="opacity" values="0;.8;.8" dur="3s" repeatCount="indefinite"/></circle>
+        <rect x="38" y="50" width="5" height="3" rx="1" fill="#8b6914" opacity=".7"><animate attributeName="opacity" values="0;.7;.7" dur="3.5s" repeatCount="indefinite"/></rect>
+        <circle cx="50" cy="25" r="3" fill="#6b5a20" opacity=".6"><animate attributeName="opacity" values="0;.6;.6" dur="4s" repeatCount="indefinite"/></circle>
+        <rect x="62" y="60" width="4" height="4" rx="1" fill="#8b6914" opacity=".7"><animate attributeName="opacity" values="0;.7;.7" dur="2.8s" repeatCount="indefinite"/></rect>
+        <circle cx="74" cy="40" r="3.5" fill="#705a20" opacity=".7"><animate attributeName="opacity" values="0;.7;.7" dur="3.2s" repeatCount="indefinite"/></circle>
+        <!-- Water passing through -->
+        <circle r="2.5" fill="#a07828" opacity=".7"><animateMotion dur="2s" repeatCount="indefinite" path="M0,44 L90,44"/></circle>
+        <!-- Solids collection tray -->
+        <rect x="10" y="86" width="80" height="4" rx="1" fill="#4a3010"/>
+        <text x="50" y="80" text-anchor="middle" fill="#f59e0b" font-size="5">Sólidos retenidos</text>
+      </g>
+      <!-- Connecting pipe -->
+      <rect x="170" y="100" width="40" height="8" rx="2" fill="#4a5568"/>
+      <circle r="2.5" fill="#9a8030" opacity=".7"><animateMotion dur="1s" repeatCount="indefinite" path="M170,104 L210,104"/></circle>
+      <!-- Sand trap (desarenador) -->
+      <g transform="translate(210,50)">
+        <rect x="0" y="0" width="110" height="110" rx="4" fill="#2a3040" stroke="#6b7280" stroke-width="1.5"/>
+        <text x="55" y="-6" text-anchor="middle" fill="#7eb8f0" font-size="8" font-weight="bold">DESARENADOR</text>
+        <!-- Water level -->
+        <rect x="5" y="15" width="100" height="70" rx="2" fill="#8a7025" opacity=".3">
+          <animate attributeName="height" values="60;70;60" dur="4s" repeatCount="indefinite"/>
+        </rect>
+        <!-- Sand settling -->
+        <ellipse cx="30" cy="95" rx="8" ry="4" fill="#a08830" opacity=".7"/>
+        <ellipse cx="55" cy="97" rx="12" ry="5" fill="#a08830" opacity=".8"/>
+        <ellipse cx="80" cy="95" rx="8" ry="4" fill="#a08830" opacity=".7"/>
+        <text x="55" y="108" text-anchor="middle" fill="#d97706" font-size="5">Arenas decantadas</text>
+        <!-- Bubbles -->
+        <circle cx="30" cy="60" r="2" fill="#b0a050" opacity=".4"><animate attributeName="cy" values="70;30" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values=".5;0" dur="2s" repeatCount="indefinite"/></circle>
+        <circle cx="60" cy="50" r="1.5" fill="#b0a050" opacity=".4"><animate attributeName="cy" values="65;25" dur="2.5s" repeatCount="indefinite"/><animate attributeName="opacity" values=".5;0" dur="2.5s" repeatCount="indefinite"/></circle>
+        <circle cx="85" cy="55" r="2" fill="#b0a050" opacity=".4"><animate attributeName="cy" values="68;28" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values=".5;0" dur="1.8s" repeatCount="indefinite"/></circle>
+        <!-- Flow particles out -->
+        <circle r="2.5" fill="#9a8838" opacity=".6"><animateMotion dur="2.5s" repeatCount="indefinite" path="M5,40 L105,40"/></circle>
+      </g>
+      <!-- Output -->
+      <rect x="320" y="100" width="60" height="8" rx="2" fill="#4a5568"/>
+      <circle r="2.5" fill="#8a9040" opacity=".7"><animateMotion dur="1.5s" repeatCount="indefinite" path="M320,104 L380,104"/></circle>
+      <text x="350" y="96" text-anchor="middle" fill="#9ca3af" font-size="7">A Ecualización →</text>
+      <!-- Legend -->
+      <circle cx="30" cy="250" r="5" fill="#a07828"/><text x="42" y="253" fill="#9ca3af" font-size="7">Agua con sólidos</text>
+      <circle cx="30" cy="268" r="5" fill="#8a9040"/><text x="42" y="271" fill="#9ca3af" font-size="7">Agua pretratada</text>
+      <rect x="25" y="278" width="10" height="8" rx="1" fill="#a08830"/><text x="42" y="286" fill="#9ca3af" font-size="7">Sólidos/Arena</text>
+    </svg>
+  </div>
+</div>
+</section>
+
+<!-- STAGE 3 -->
+<section class="stage" data-stage="3">
+<div class="stage-inner">
+  <div class="stage-text">
+    <div class="stage-number">Etapa 03</div>
+    <h2 class="stage-title"><span>Ecualización</span></h2>
+    <p class="stage-desc">El flujo pretratado llega a un tanque industrial ecualizador que estabiliza el volumen y amortigua los picos de demanda. Esto garantiza un caudal constante y homogéneo para las etapas siguientes del tratamiento.</p>
+  </div>
+  <div class="diagram">
+    <svg viewBox="0 0 400 300" id="svg3">
+      <!-- Input pipe -->
+      <rect x="10" y="120" width="50" height="8" rx="2" fill="#4a5568"/>
+      <circle r="2.5" fill="#8a9040" opacity=".7"><animateMotion dur="1.5s" repeatCount="indefinite" path="M10,124 L60,124"/></circle>
+      <!-- Equalization tank -->
+      <g transform="translate(70,40)">
+        <rect x="0" y="0" width="200" height="180" rx="6" fill="#2a3040" stroke="#6b7280" stroke-width="2"/>
+        <text x="100" y="-8" text-anchor="middle" fill="#7eb8f0" font-size="9" font-weight="bold">TANQUE ECUALIZADOR</text>
+        <!-- Water body with wave animation -->
+        <clipPath id="tankClip"><rect x="5" y="5" width="190" height="170" rx="3"/></clipPath>
+        <g clip-path="url(#tankClip)">
+          <rect x="5" y="40" width="190" height="135" fill="#6a7a50" opacity=".35">
+            <animate attributeName="y" values="50;35;50" dur="5s" repeatCount="indefinite"/>
+            <animate attributeName="height" values="125;140;125" dur="5s" repeatCount="indefinite"/>
+          </rect>
+          <!-- Wave surface -->
+          <path d="M5,50 Q55,40 105,50 T205,50" fill="none" stroke="#8a9a60" stroke-width="2" opacity=".6">
+            <animate attributeName="d" values="M5,50 Q55,40 105,50 T205,50;M5,50 Q55,60 105,50 T205,50;M5,50 Q55,40 105,50 T205,50" dur="3s" repeatCount="indefinite"/>
+          </path>
+          <!-- Volume indicator bars -->
+          <rect x="175" y="50" width="15" height="120" rx="2" fill="none" stroke="#4a90d9" stroke-width="1" opacity=".5"/>
+          <rect x="177" y="70" width="11" height="98" rx="1" fill="#4a90d9" opacity=".3">
+            <animate attributeName="y" values="80;60;80" dur="5s" repeatCount="indefinite"/>
+            <animate attributeName="height" values="88;108;88" dur="5s" repeatCount="indefinite"/>
+          </rect>
+          <!-- Flow mixing indicators -->
+          <circle cx="60" cy="100" r="15" fill="none" stroke="#8a9a60" stroke-width="1" opacity=".3">
+            <animateTransform attributeName="transform" type="rotate" from="0 60 100" to="360 60 100" dur="4s" repeatCount="indefinite"/>
+            <animate attributeName="r" values="12;18;12" dur="3s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="120" cy="110" r="12" fill="none" stroke="#8a9a60" stroke-width="1" opacity=".3">
+            <animateTransform attributeName="transform" type="rotate" from="360 120 110" to="0 120 110" dur="3.5s" repeatCount="indefinite"/>
+            <animate attributeName="r" values="10;15;10" dur="3.5s" repeatCount="indefinite"/>
+          </circle>
+        </g>
+        <!-- Tank labels -->
+        <text x="100" y="30" text-anchor="middle" fill="#9ca3af" font-size="7">Nivel variable</text>
+        <text x="85" y="160" text-anchor="middle" fill="#6b7280" font-size="6">Caudal estabilizado</text>
+      </g>
+      <!-- Flow rate graph -->
+      <g transform="translate(290,50)">
+        <text x="45" y="-5" text-anchor="middle" fill="#7eb8f0" font-size="7" font-weight="bold">Caudal</text>
+        <rect x="0" y="0" width="90" height="70" rx="3" fill="#1a2530" stroke="#4a5568" stroke-width="1"/>
+        <!-- Input spikes -->
+        <polyline points="5,55 15,20 25,50 35,10 45,45 55,15 65,50 75,30 85,48" fill="none" stroke="#d97706" stroke-width="1.5" opacity=".7"/>
+        <text x="45" y="85" text-anchor="middle" fill="#d97706" font-size="6">Entrada (picos)</text>
+        <!-- Output smooth -->
+        <line x1="5" y1="38" x2="85" y2="38" stroke="#4a90d9" stroke-width="2" stroke-dasharray="3,2"/>
+        <text x="45" y="95" text-anchor="middle" fill="#4a90d9" font-size="6">Salida (estable)</text>
+      </g>
+      <!-- Output pipe -->
+      <rect x="270" y="180" width="8" height="50" rx="2" fill="#4a5568"/>
+      <rect x="270" y="228" width="100" height="8" rx="2" fill="#4a5568"/>
+      <circle r="2.5" fill="#7a8a50" opacity=".7"><animateMotion dur="2s" repeatCount="indefinite" path="M274,180 L274,232 L370,232"/></circle>
+      <text x="330" y="250" text-anchor="middle" fill="#9ca3af" font-size="7">A Tratamiento MBR →</text>
+    </svg>
+  </div>
+</div>
+</section>
+
+<!-- STAGE 4 -->
+<section class="stage" data-stage="4">
+<div class="stage-inner">
+  <div class="stage-text">
+    <div class="stage-number">Etapa 04</div>
+    <h2 class="stage-title">Tratamiento <span>Fisicoquímico y Biológico</span></h2>
+    <p class="stage-desc">Núcleo MBR: El agua libre de sólidos entra a los reactores de la planta compacta. Los lodos activados interactúan con dosificación automatizada de policloruro de aluminio (PAC), descomponiendo materia orgánica y separando lodos del agua clarificada.</p>
+  </div>
+  <div class="diagram">
+    <svg viewBox="0 0 400 300" id="svg4">
+      <!-- Input -->
+      <rect x="5" y="80" width="40" height="7" rx="2" fill="#4a5568"/>
+      <circle r="2.5" fill="#7a8a50" opacity=".7"><animateMotion dur="1.2s" repeatCount="indefinite" path="M5,83 L45,83"/></circle>
+      <!-- Bioreactor -->
+      <g transform="translate(50,30)">
+        <rect x="0" y="0" width="150" height="160" rx="5" fill="#1a2a3a" stroke="#4a90d9" stroke-width="2"/>
+        <text x="75" y="-8" text-anchor="middle" fill="#4a90d9" font-size="9" font-weight="bold">REACTOR MBR</text>
+        <clipPath id="mbrClip"><rect x="3" y="3" width="144" height="154" rx="3"/></clipPath>
+        <g clip-path="url(#mbrClip)">
+          <!-- Water -->
+          <rect x="3" y="20" width="144" height="137" fill="#4a6a3a" opacity=".3"/>
+          <!-- Activated sludge blobs -->
+          <circle cx="30" cy="80" r="8" fill="#5a6a30" opacity=".5"><animate attributeName="cy" values="70;90;70" dur="3s" repeatCount="indefinite"/></circle>
+          <circle cx="60" cy="100" r="6" fill="#5a6a30" opacity=".4"><animate attributeName="cy" values="95;110;95" dur="2.5s" repeatCount="indefinite"/></circle>
+          <circle cx="90" cy="75" r="7" fill="#5a6a30" opacity=".5"><animate attributeName="cy" values="70;85;70" dur="3.5s" repeatCount="indefinite"/></circle>
+          <circle cx="120" cy="90" r="5" fill="#5a6a30" opacity=".4"><animate attributeName="cy" values="85;100;85" dur="2.8s" repeatCount="indefinite"/></circle>
+          <circle cx="45" cy="120" r="9" fill="#5a6a30" opacity=".45"><animate attributeName="cy" values="115;130;115" dur="3.2s" repeatCount="indefinite"/></circle>
+          <circle cx="105" cy="110" r="7" fill="#5a6a30" opacity=".45"><animate attributeName="cy" values="105;125;105" dur="2.7s" repeatCount="indefinite"/></circle>
+          <!-- Aeration bubbles -->
+          <circle cx="25" cy="140" r="2" fill="#7eb8f0" opacity=".3"><animate attributeName="cy" values="140;30" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values=".4;0" dur="2s" repeatCount="indefinite"/></circle>
+          <circle cx="55" cy="140" r="1.5" fill="#7eb8f0" opacity=".3"><animate attributeName="cy" values="140;30" dur="2.3s" repeatCount="indefinite"/><animate attributeName="opacity" values=".4;0" dur="2.3s" repeatCount="indefinite"/></circle>
+          <circle cx="85" cy="140" r="2" fill="#7eb8f0" opacity=".3"><animate attributeName="cy" values="140;30" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values=".4;0" dur="1.8s" repeatCount="indefinite"/></circle>
+          <circle cx="115" cy="140" r="1.5" fill="#7eb8f0" opacity=".3"><animate attributeName="cy" values="140;30" dur="2.5s" repeatCount="indefinite"/><animate attributeName="opacity" values=".4;0" dur="2.5s" repeatCount="indefinite"/></circle>
+          <!-- Membrane filter lines -->
+          <line x1="130" y1="25" x2="130" y2="150" stroke="#4a90d9" stroke-width="2" stroke-dasharray="4,2" opacity=".6"/>
+          <text x="137" y="90" fill="#4a90d9" font-size="5" transform="rotate(90,137,90)">MEMBRANA</text>
+        </g>
+        <text x="65" y="170" fill="#6b7280" font-size="6">Lodos Activados + Membrana</text>
+      </g>
+      <!-- PAC dosing system -->
+      <g transform="translate(85,200)">
+        <rect x="0" y="0" width="40" height="50" rx="3" fill="#2d5a8a" stroke="#4a90d9" stroke-width="1"/>
+        <text x="20" y="-4" text-anchor="middle" fill="#f59e0b" font-size="6" font-weight="bold">PAC</text>
+        <text x="20" y="20" text-anchor="middle" fill="#7eb8f0" font-size="5">Policloruro</text>
+        <text x="20" y="28" text-anchor="middle" fill="#7eb8f0" font-size="5">Aluminio</text>
+        <!-- Dripping animation -->
+        <rect x="17" y="50" width="6" height="1" fill="#f59e0b"/>
+        <circle cx="20" cy="55" r="2" fill="#f59e0b" opacity=".8"><animate attributeName="cy" values="52;45;52" dur="1s" repeatCount="indefinite"/><animate attributeName="opacity" values=".8;0;.8" dur="1s" repeatCount="indefinite"/></circle>
+        <!-- Pipe to reactor -->
+        <rect x="18" y="-15" width="4" height="15" rx="1" fill="#4a5568"/>
+      </g>
+      <!-- Clarifier / separator -->
+      <g transform="translate(220,30)">
+        <rect x="0" y="0" width="120" height="160" rx="5" fill="#1a2a3a" stroke="#2d8a56" stroke-width="2"/>
+        <text x="60" y="-8" text-anchor="middle" fill="#2d8a56" font-size="9" font-weight="bold">SEPARACIÓN</text>
+        <clipPath id="sepClip"><rect x="3" y="3" width="114" height="154" rx="3"/></clipPath>
+        <g clip-path="url(#sepClip)">
+          <!-- Clarified water on top -->
+          <rect x="3" y="15" width="114" height="80" fill="#4a90d9" opacity=".2"/>
+          <text x="60" y="55" text-anchor="middle" fill="#4a90d9" font-size="7">Agua Clarificada</text>
+          <!-- Separation line -->
+          <line x1="3" y1="95" x2="117" y2="95" stroke="#6b7280" stroke-width="1" stroke-dasharray="4,2"/>
+          <!-- Settled sludge -->
+          <rect x="3" y="95" width="114" height="62" fill="#5a6a30" opacity=".3"/>
+          <text x="60" y="130" text-anchor="middle" fill="#8b6914" font-size="7">Lodos</text>
+          <!-- Sludge settling particles -->
+          <circle cx="30" cy="100" r="3" fill="#5a6a30" opacity=".5"><animate attributeName="cy" values="80;110;80" dur="4s" repeatCount="indefinite"/></circle>
+          <circle cx="70" cy="105" r="4" fill="#5a6a30" opacity=".4"><animate attributeName="cy" values="85;115;85" dur="3.5s" repeatCount="indefinite"/></circle>
+          <circle cx="95" cy="100" r="3" fill="#5a6a30" opacity=".5"><animate attributeName="cy" values="82;112;82" dur="4.2s" repeatCount="indefinite"/></circle>
+        </g>
+      </g>
+      <!-- Arrow between reactor and separator -->
+      <line x1="200" y1="110" x2="220" y2="110" stroke="#4a90d9" stroke-width="2" marker-end="url(#arrowBlue)"/>
+      <defs><marker id="arrowBlue" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto"><polygon points="0,0 6,2 0,4" fill="#4a90d9"/></marker></defs>
+      <!-- Output clarified water -->
+      <rect x="340" y="55" width="50" height="7" rx="2" fill="#4a5568"/>
+      <circle r="2.5" fill="#4a90d9" opacity=".6"><animateMotion dur="1.5s" repeatCount="indefinite" path="M340,58 L390,58"/></circle>
+      <text x="365" y="50" text-anchor="middle" fill="#9ca3af" font-size="6">→ Desinfección</text>
+      <!-- Sludge recirculation -->
+      <path d="M280,195 L280,220 L100,220 L100,190" fill="none" stroke="#8b6914" stroke-width="2" stroke-dasharray="4,3"/>
+      <text x="190" y="216" text-anchor="middle" fill="#8b6914" font-size="6">Recirculación de lodos</text>
+      <polygon points="98,195 102,195 100,190" fill="#8b6914"/>
+    </svg>
+  </div>
+</div>
+</section>
+
+<!-- STAGE 5 -->
+<section class="stage" data-stage="5">
+<div class="stage-inner">
+  <div class="stage-text">
+    <div class="stage-number">Etapa 05</div>
+    <h2 class="stage-title">Desinfección y <span>Acondicionamiento</span></h2>
+    <p class="stage-desc">El flujo clarificado pasa a una cámara de contacto donde una bomba dosificadora inyecta hipoclorito de sodio (NaClO). Esto elimina patógenos y asegura el cumplimiento de la NOM-001-SEMARNAT-2021.</p>
+  </div>
+  <div class="diagram">
+    <svg viewBox="0 0 400 300" id="svg5">
+      <!-- Input pipe -->
+      <rect x="10" y="110" width="50" height="7" rx="2" fill="#4a5568"/>
+      <circle r="2.5" fill="#4a90d9" opacity=".5"><animateMotion dur="1.2s" repeatCount="indefinite" path="M10,113 L60,113"/></circle>
+      <text x="35" y="105" text-anchor="middle" fill="#9ca3af" font-size="7">Agua clarificada</text>
+      <!-- Contact chamber -->
+      <g transform="translate(70,40)">
+        <rect x="0" y="0" width="180" height="140" rx="5" fill="#1a2a3a" stroke="#2d8a56" stroke-width="2"/>
+        <text x="90" y="-8" text-anchor="middle" fill="#2d8a56" font-size="9" font-weight="bold">CÁMARA DE CONTACTO</text>
+        <clipPath id="ccClip"><rect x="3" y="3" width="174" height="134" rx="3"/></clipPath>
+        <g clip-path="url(#ccClip)">
+          <!-- Water body - cleaner blue-green -->
+          <rect x="3" y="15" width="174" height="122" fill="#3a8a6a" opacity=".15"/>
+          <!-- Baffles for contact time -->
+          <rect x="40" y="15" width="4" height="90" rx="1" fill="#4a5568"/>
+          <rect x="80" y="35" width="4" height="102" rx="1" fill="#4a5568"/>
+          <rect x="120" y="15" width="4" height="90" rx="1" fill="#4a5568"/>
+          <!-- Flow path around baffles -->
+          <circle r="2" fill="#3aaa7a" opacity=".5"><animateMotion dur="6s" repeatCount="indefinite" path="M10,50 L38,50 L38,110 L82,110 L82,40 L118,40 L118,110 L165,110"/></circle>
+          <circle r="2" fill="#3aaa7a" opacity=".5"><animateMotion dur="6s" begin="2s" repeatCount="indefinite" path="M10,50 L38,50 L38,110 L82,110 L82,40 L118,40 L118,110 L165,110"/></circle>
+          <circle r="2" fill="#3aaa7a" opacity=".5"><animateMotion dur="6s" begin="4s" repeatCount="indefinite" path="M10,50 L38,50 L38,110 L82,110 L82,40 L118,40 L118,110 L165,110"/></circle>
+          <!-- Chlorine dispersion effect -->
+          <circle cx="30" cy="30" r="20" fill="#2d8a56" opacity="0"><animate attributeName="opacity" values="0;.15;0" dur="3s" repeatCount="indefinite"/><animate attributeName="r" values="5;25;5" dur="3s" repeatCount="indefinite"/></circle>
+          <circle cx="90" cy="70" r="15" fill="#2d8a56" opacity="0"><animate attributeName="opacity" values="0;.12;0" dur="3.5s" repeatCount="indefinite" begin=".5s"/><animate attributeName="r" values="5;20;5" dur="3.5s" repeatCount="indefinite" begin=".5s"/></circle>
+          <!-- Pathogen elimination X marks -->
+          <g opacity="0"><animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite"/>
+            <text x="55" y="75" text-anchor="middle" fill="#ef4444" font-size="10" font-weight="bold">✕</text>
+          </g>
+          <g opacity="0"><animate attributeName="opacity" values="0;1;0" dur="2.5s" repeatCount="indefinite" begin=".7s">
+          </animate><text x="100" y="55" text-anchor="middle" fill="#ef4444" font-size="8" font-weight="bold">✕</text></g>
+          <g opacity="0"><animate attributeName="opacity" values="0;1;0" dur="2.2s" repeatCount="indefinite" begin="1.2s">
+          </animate><text x="140" y="85" text-anchor="middle" fill="#ef4444" font-size="9" font-weight="bold">✕</text></g>
+        </g>
+        <text x="90" y="152" text-anchor="middle" fill="#6b7280" font-size="6">Tiempo de contacto: bafles serpentín</text>
+      </g>
+      <!-- NaClO dosing pump -->
+      <g transform="translate(130,195)">
+        <rect x="0" y="0" width="60" height="45" rx="3" fill="#1e5a94" stroke="#4a90d9" stroke-width="1.5"/>
+        <text x="30" y="15" text-anchor="middle" fill="#7eb8f0" font-size="7" font-weight="bold">NaClO</text>
+        <text x="30" y="25" text-anchor="middle" fill="#4a90d9" font-size="5">Hipoclorito</text>
+        <text x="30" y="33" text-anchor="middle" fill="#4a90d9" font-size="5">de Sodio</text>
+        <!-- Pump action indicator -->
+        <circle cx="50" cy="12" r="4" fill="#2d8a56"><animate attributeName="r" values="3;5;3" dur="1s" repeatCount="indefinite"/></circle>
+        <!-- Pipe to chamber -->
+        <rect x="28" y="-18" width="4" height="18" rx="1" fill="#4a5568"/>
+        <!-- Drip -->
+        <circle cx="30" cy="-18" r="2" fill="#2d8a56" opacity=".7"><animate attributeName="cy" values="-18;-25" dur=".8s" repeatCount="indefinite"/><animate attributeName="opacity" values=".8;0" dur=".8s" repeatCount="indefinite"/></circle>
+      </g>
+      <!-- NOM compliance badge -->
+      <g transform="translate(280,200)">
+        <rect x="0" y="0" width="100" height="55" rx="4" fill="#1a3a2a" stroke="#2d8a56" stroke-width="1.5"/>
+        <text x="50" y="16" text-anchor="middle" fill="#2d8a56" font-size="6" font-weight="bold">✓ CUMPLIMIENTO</text>
+        <text x="50" y="28" text-anchor="middle" fill="#4ade80" font-size="7" font-weight="bold">NOM-001</text>
+        <text x="50" y="38" text-anchor="middle" fill="#4ade80" font-size="6">SEMARNAT</text>
+        <text x="50" y="48" text-anchor="middle" fill="#4ade80" font-size="6">2021</text>
+      </g>
+      <!-- Output -->
+      <rect x="250" y="110" width="60" height="7" rx="2" fill="#4a5568"/>
+      <circle r="2.5" fill="#3aaa7a" opacity=".6"><animateMotion dur="1.5s" repeatCount="indefinite" path="M250,113 L310,113"/></circle>
+      <text x="300" y="105" text-anchor="middle" fill="#9ca3af" font-size="7">→ Monitoreo</text>
+    </svg>
+  </div>
+</div>
+</section>
+
+<!-- STAGE 6 -->
+<section class="stage" data-stage="6">
+<div class="stage-inner">
+  <div class="stage-text">
+    <div class="stage-number">Etapa 06</div>
+    <h2 class="stage-title">Monitoreo de <span>Calidad In Situ</span></h2>
+    <p class="stage-desc">Se realiza un muestreo físico utilizando indicadores de color con reactivos DPD (cloro residual) y rojo fenol (pH). Los resultados validan que el agua tratada es segura para su reinserción al edificio.</p>
+  </div>
+  <div class="diagram">
+    <svg viewBox="0 0 400 300" id="svg6">
+      <!-- Test tube rack -->
+      <g transform="translate(50,50)">
+        <text x="120" y="-10" text-anchor="middle" fill="#7eb8f0" font-size="9" font-weight="bold">ANÁLISIS DE CALIDAD</text>
+        <!-- Rack base -->
+        <rect x="20" y="170" width="200" height="8" rx="2" fill="#4a5568"/>
+        <rect x="30" y="5" width="8" height="168" rx="1" fill="#4a5568"/>
+        <rect x="202" y="5" width="8" height="168" rx="1" fill="#4a5568"/>
+        <!-- Test tube 1 - DPD (chlorine) -->
+        <g transform="translate(60,20)">
+          <rect x="0" y="0" width="28" height="140" rx="10" fill="#1a2a3a" stroke="#6b7280" stroke-width="1.5"/>
+          <clipPath id="tube1"><rect x="2" y="2" width="24" height="136" rx="9"/></clipPath>
+          <g clip-path="url(#tube1)">
+            <rect x="2" y="40" width="24" height="98" fill="#d946a8" opacity=".4">
+              <animate attributeName="y" values="90;40;40" dur="3s" fill="freeze" repeatCount="indefinite"/>
+              <animate attributeName="height" values="48;98;98" dur="3s" fill="freeze" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values=".1;.4;.4" dur="3s" repeatCount="indefinite"/>
+            </rect>
+          </g>
+          <text x="14" y="155" text-anchor="middle" fill="#d946a8" font-size="7" font-weight="bold">DPD</text>
+          <text x="14" y="165" text-anchor="middle" fill="#9ca3af" font-size="5">Cl₂ residual</text>
+        </g>
+        <!-- Test tube 2 - Phenol Red (pH) -->
+        <g transform="translate(110,20)">
+          <rect x="0" y="0" width="28" height="140" rx="10" fill="#1a2a3a" stroke="#6b7280" stroke-width="1.5"/>
+          <clipPath id="tube2"><rect x="2" y="2" width="24" height="136" rx="9"/></clipPath>
+          <g clip-path="url(#tube2)">
+            <rect x="2" y="40" width="24" height="98" fill="#ef4444" opacity=".35">
+              <animate attributeName="y" values="90;40;40" dur="3.5s" fill="freeze" repeatCount="indefinite"/>
+              <animate attributeName="height" values="48;98;98" dur="3.5s" fill="freeze" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values=".1;.35;.35" dur="3.5s" repeatCount="indefinite"/>
+            </rect>
+          </g>
+          <text x="14" y="155" text-anchor="middle" fill="#ef4444" font-size="7" font-weight="bold">pH</text>
+          <text x="14" y="165" text-anchor="middle" fill="#9ca3af" font-size="5">Rojo Fenol</text>
+        </g>
+        <!-- Test tube 3 - reference/turbidity -->
+        <g transform="translate(160,20)">
+          <rect x="0" y="0" width="28" height="140" rx="10" fill="#1a2a3a" stroke="#6b7280" stroke-width="1.5"/>
+          <clipPath id="tube3"><rect x="2" y="2" width="24" height="136" rx="9"/></clipPath>
+          <g clip-path="url(#tube3)">
+            <rect x="2" y="40" width="24" height="98" fill="#4a90d9" opacity=".3">
+              <animate attributeName="y" values="90;40;40" dur="3.2s" fill="freeze" repeatCount="indefinite"/>
+              <animate attributeName="height" values="48;98;98" dur="3.2s" fill="freeze" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values=".1;.3;.3" dur="3.2s" repeatCount="indefinite"/>
+            </rect>
+          </g>
+          <text x="14" y="155" text-anchor="middle" fill="#4a90d9" font-size="7" font-weight="bold">Turb.</text>
+          <text x="14" y="165" text-anchor="middle" fill="#9ca3af" font-size="5">Referencia</text>
+        </g>
+      </g>
+      <!-- Results panel -->
+      <g transform="translate(280,60)">
+        <rect x="0" y="0" width="100" height="160" rx="5" fill="#1a2a3a" stroke="#2d8a56" stroke-width="1.5"/>
+        <text x="50" y="20" text-anchor="middle" fill="#2d8a56" font-size="8" font-weight="bold">RESULTADOS</text>
+        <line x1="10" y1="28" x2="90" y2="28" stroke="#2d8a56" stroke-width=".5" opacity=".5"/>
+        <!-- Chlorine -->
+        <text x="15" y="48" fill="#d946a8" font-size="7">Cl₂ libre:</text>
+        <text x="85" y="48" text-anchor="end" fill="#4ade80" font-size="8" font-weight="bold">0.5 mg/L</text>
+        <text x="50" y="58" text-anchor="middle" fill="#6b7280" font-size="5">Rango: 0.2 - 1.5</text>
+        <text x="85" y="58" text-anchor="end" fill="#4ade80" font-size="6">✓</text>
+        <!-- pH -->
+        <text x="15" y="80" fill="#ef4444" font-size="7">pH:</text>
+        <text x="85" y="80" text-anchor="end" fill="#4ade80" font-size="8" font-weight="bold">7.2</text>
+        <text x="50" y="90" text-anchor="middle" fill="#6b7280" font-size="5">Rango: 6.5 - 8.5</text>
+        <text x="85" y="90" text-anchor="end" fill="#4ade80" font-size="6">✓</text>
+        <!-- Turbidity -->
+        <text x="15" y="112" fill="#4a90d9" font-size="7">Turbidez:</text>
+        <text x="85" y="112" text-anchor="end" fill="#4ade80" font-size="8" font-weight="bold">2 NTU</text>
+        <text x="50" y="122" text-anchor="middle" fill="#6b7280" font-size="5">Máx: 5 NTU</text>
+        <text x="85" y="122" text-anchor="end" fill="#4ade80" font-size="6">✓</text>
+        <!-- Overall -->
+        <rect x="10" y="132" width="80" height="20" rx="3" fill="#1a3a2a" stroke="#2d8a56" stroke-width="1">
+          <animate attributeName="opacity" values=".7;1;.7" dur="2s" repeatCount="indefinite"/>
+        </rect>
+        <text x="50" y="146" text-anchor="middle" fill="#4ade80" font-size="7" font-weight="bold">APROBADO ✓</text>
+      </g>
+    </svg>
+  </div>
+</div>
+</section>
+
+<!-- STAGE 7-8 -->
+<section class="stage" data-stage="7">
+<div class="stage-inner">
+  <div class="stage-text">
+    <div class="stage-number">Etapas 07 — 08</div>
+    <h2 class="stage-title">Almacenamiento y <span>Reinserción</span></h2>
+    <p class="stage-desc">El agua, ahora completamente transparente, ingresa a una cisterna exclusiva de reúso. Un sistema hidroneumático la inyecta a presión a través de una red de tuberías independiente, llevándola de vuelta a las válvulas de descarga del edificio y cerrando el ciclo.</p>
+  </div>
+  <div class="diagram">
+    <svg viewBox="0 0 400 300" id="svg7">
+      <!-- Input pipe -->
+      <rect x="5" y="130" width="40" height="7" rx="2" fill="#4a5568"/>
+      <circle r="2.5" fill="#7eb8f0" opacity=".7"><animateMotion dur="1s" repeatCount="indefinite" path="M5,133 L45,133"/></circle>
+      <text x="25" y="125" text-anchor="middle" fill="#9ca3af" font-size="6">Agua tratada</text>
+      <!-- Reuse cistern -->
+      <g transform="translate(50,60)">
+        <rect x="0" y="0" width="120" height="150" rx="6" fill="#1a2a3a" stroke="#4a90d9" stroke-width="2"/>
+        <text x="60" y="-8" text-anchor="middle" fill="#4a90d9" font-size="8" font-weight="bold">CISTERNA DE REÚSO</text>
+        <clipPath id="cisClip"><rect x="3" y="3" width="114" height="144" rx="4"/></clipPath>
+        <g clip-path="url(#cisClip)">
+          <!-- Clean water -->
+          <rect x="3" y="20" width="114" height="127" fill="#4a90d9" opacity=".15"/>
+          <!-- Wave surface -->
+          <path d="M3,25 Q30,18 60,25 T117,25" fill="none" stroke="#7eb8f0" stroke-width="1.5" opacity=".5">
+            <animate attributeName="d" values="M3,25 Q30,18 60,25 T117,25;M3,25 Q30,32 60,25 T117,25;M3,25 Q30,18 60,25 T117,25" dur="3s" repeatCount="indefinite"/>
+          </path>
+          <!-- Sparkle/clean indicators -->
+          <text x="30" y="60" fill="#7eb8f0" font-size="8" opacity=".4">✦</text>
+          <text x="70" y="80" fill="#7eb8f0" font-size="6" opacity=".3">✦</text>
+          <text x="90" y="55" fill="#7eb8f0" font-size="7" opacity=".35">✦</text>
+          <text x="50" y="100" fill="#7eb8f0" font-size="5" opacity=".3">✦</text>
+          <text x="60" y="130" text-anchor="middle" fill="#4a90d9" font-size="7" opacity=".5">Agua Limpia</text>
+        </g>
+        <text x="60" y="162" text-anchor="middle" fill="#6b7280" font-size="5">Almacenamiento exclusivo</text>
+      </g>
+      <!-- Hydropneumatic system -->
+      <g transform="translate(190,80)">
+        <!-- Pressure tank -->
+        <ellipse cx="30" cy="50" rx="25" ry="40" fill="#2a3040" stroke="#4a90d9" stroke-width="1.5"/>
+        <text x="30" y="45" text-anchor="middle" fill="#7eb8f0" font-size="6">Tanque</text>
+        <text x="30" y="53" text-anchor="middle" fill="#7eb8f0" font-size="6">Hidro-</text>
+        <text x="30" y="61" text-anchor="middle" fill="#7eb8f0" font-size="6">neumático</text>
+        <!-- Pressure indicator -->
+        <circle cx="30" cy="20" r="10" fill="#1a2a3a" stroke="#4a90d9" stroke-width="1"/>
+        <line x1="30" y1="20" x2="36" y2="15" stroke="#4ade80" stroke-width="1.5">
+          <animateTransform attributeName="transform" type="rotate" from="-30 30 20" to="30 30 20" dur="2s" repeatCount="indefinite" values="-30 30 20;30 30 20;-30 30 20"/>
+        </line>
+        <text x="30" y="0" text-anchor="middle" fill="#4ade80" font-size="6">PSI</text>
+        <!-- Pump -->
+        <rect x="10" y="95" width="40" height="25" rx="3" fill="#1e5a94" stroke="#4a90d9" stroke-width="1">
+          <animate attributeName="opacity" values="1;.7;1" dur="1.2s" repeatCount="indefinite"/>
+        </rect>
+        <text x="30" y="111" text-anchor="middle" fill="#7eb8f0" font-size="6">Bomba</text>
+      </g>
+      <!-- Pipe from cistern to hydropneumatic -->
+      <rect x="170" y="130" width="25" height="6" rx="1" fill="#4a5568"/>
+      <circle r="2" fill="#7eb8f0" opacity=".6"><animateMotion dur="1s" repeatCount="indefinite" path="M170,133 L195,133"/></circle>
+      <!-- Independent pipe network going up to building -->
+      <rect x="250" y="50" width="6" height="155" rx="1" fill="#2d8a56"/>
+      <rect x="250" y="50" width="100" height="6" rx="1" fill="#2d8a56"/>
+      <text x="300" y="45" text-anchor="middle" fill="#2d8a56" font-size="6">Red independiente de reúso</text>
+      <!-- Flow in green pipes -->
+      <circle r="2.5" fill="#4ade80" opacity=".6"><animateMotion dur="3s" repeatCount="indefinite" path="M253,200 L253,53 L350,53"/></circle>
+      <circle r="2.5" fill="#4ade80" opacity=".6"><animateMotion dur="3s" begin="1.5s" repeatCount="indefinite" path="M253,200 L253,53 L350,53"/></circle>
+      <!-- Building return -->
+      <g transform="translate(310,60)">
+        <rect x="0" y="0" width="70" height="100" rx="3" fill="#2a3040" stroke="#4a5568" stroke-width="1.5"/>
+        <text x="35" y="-5" text-anchor="middle" fill="#7eb8f0" font-size="7">EDIFICIO</text>
+        <!-- Windows -->
+        <rect x="8" y="10" width="14" height="10" rx="1" fill="#1a2530" stroke="#4a90d9" stroke-width=".5"/>
+        <rect x="28" y="10" width="14" height="10" rx="1" fill="#1a2530" stroke="#4a90d9" stroke-width=".5"/>
+        <rect x="48" y="10" width="14" height="10" rx="1" fill="#1a2530" stroke="#4a90d9" stroke-width=".5"/>
+        <!-- Toilets receiving water -->
+        <rect x="12" y="40" width="12" height="14" rx="2" fill="#6b7280"/>
+        <rect x="14" y="37" width="8" height="5" rx="1" fill="#6b7280"/>
+        <rect x="42" y="40" width="12" height="14" rx="2" fill="#6b7280"/>
+        <rect x="44" y="37" width="8" height="5" rx="1" fill="#6b7280"/>
+        <text x="35" y="70" text-anchor="middle" fill="#4ade80" font-size="5">Válvulas WC</text>
+        <!-- Water drop indicators -->
+        <text x="18" y="60" fill="#4a90d9" font-size="6" opacity=".6">💧</text>
+        <text x="48" y="60" fill="#4a90d9" font-size="6" opacity=".6">💧</text>
+        <!-- Cycle arrow -->
+        <text x="35" y="90" text-anchor="middle" fill="#4ade80" font-size="6" font-weight="bold">♻ CICLO CERRADO</text>
+      </g>
+      <!-- Cycle completion indicator -->
+      <g transform="translate(120,250)">
+        <rect x="0" y="0" width="160" height="30" rx="4" fill="#1a3a2a" stroke="#2d8a56" stroke-width="1.5">
+          <animate attributeName="opacity" values=".7;1;.7" dur="2s" repeatCount="indefinite"/>
+        </rect>
+        <text x="80" y="13" text-anchor="middle" fill="#4ade80" font-size="7" font-weight="bold">SEGUNDA VIDA AL AGUA</text>
+        <text x="80" y="24" text-anchor="middle" fill="#2d8a56" font-size="6">Ciclo completo de reciclaje</text>
+      </g>
+    </svg>
+  </div>
+</div>
+</section>
+
+<!-- STAGE 9 -->
+<section class="stage" data-stage="8">
+<div class="stage-inner">
+  <div class="stage-text">
+    <div class="stage-number">Etapa 09</div>
+    <h2 class="stage-title">Automatización — <span>El Cerebro de la Operación</span></h2>
+    <p class="stage-desc">Todo este ciclo ocurre sin intervención humana constante. El flujo, los retrolavados de filtros y las dosificaciones están completamente automatizados, gobernados por un tablero de control con un PLC Siemens que monitorea y ajusta cada variable en tiempo real.</p>
+  </div>
+  <div class="diagram">
+    <svg viewBox="0 0 400 300" id="svg8">
+      <!-- Control panel (main element) -->
+      <g transform="translate(100,20)">
+        <rect x="0" y="0" width="200" height="250" rx="8" fill="#2a3040" stroke="#4a90d9" stroke-width="2.5"/>
+        <!-- Panel header -->
+        <rect x="0" y="0" width="200" height="35" rx="8" fill="#1a4a7a"/>
+        <rect x="0" y="20" width="200" height="15" fill="#1a4a7a"/>
+        <text x="100" y="22" text-anchor="middle" fill="#fff" font-size="9" font-weight="bold" font-family="Space Mono">TABLERO DE CONTROL</text>
+        <!-- Siemens PLC -->
+        <g transform="translate(20,45)">
+          <rect x="0" y="0" width="70" height="45" rx="3" fill="#1a2a3a" stroke="#00a88e" stroke-width="1.5"/>
+          <text x="35" y="14" text-anchor="middle" fill="#00a88e" font-size="7" font-weight="bold" font-family="Space Mono">SIEMENS</text>
+          <text x="35" y="25" text-anchor="middle" fill="#7eb8f0" font-size="6">PLC S7-1200</text>
+          <!-- Status LEDs -->
+          <circle cx="12" cy="36" r="3" fill="#4ade80"><animate attributeName="opacity" values="1;.4;1" dur="1s" repeatCount="indefinite"/></circle>
+          <circle cx="24" cy="36" r="3" fill="#4ade80"><animate attributeName="opacity" values="1;.4;1" dur="1.3s" repeatCount="indefinite"/></circle>
+          <circle cx="36" cy="36" r="3" fill="#f59e0b"><animate attributeName="opacity" values="1;.5;1" dur=".8s" repeatCount="indefinite"/></circle>
+          <circle cx="48" cy="36" r="3" fill="#4ade80"><animate attributeName="opacity" values="1;.4;1" dur="1.1s" repeatCount="indefinite"/></circle>
+          <circle cx="60" cy="36" r="3" fill="#4ade80"><animate attributeName="opacity" values="1;.4;1" dur="1.5s" repeatCount="indefinite"/></circle>
+        </g>
+        <!-- HMI Screen -->
+        <g transform="translate(105,45)">
+          <rect x="0" y="0" width="75" height="45" rx="3" fill="#0a1520" stroke="#4a90d9" stroke-width="1"/>
+          <!-- Screen content - live data -->
+          <text x="37" y="12" text-anchor="middle" fill="#4ade80" font-size="5" font-family="Space Mono">SISTEMA OK</text>
+          <text x="10" y="22" fill="#7eb8f0" font-size="4.5">Flujo: 2.4 L/m</text>
+          <text x="10" y="30" fill="#7eb8f0" font-size="4.5">pH: 7.2</text>
+          <text x="10" y="38" fill="#7eb8f0" font-size="4.5">Cl₂: 0.5 mg/L</text>
+          <!-- Blinking cursor -->
+          <rect x="55" y="34" width="4" height="6" fill="#4ade80" opacity=".7"><animate attributeName="opacity" values="0;.7;0" dur="1s" repeatCount="indefinite"/></rect>
+        </g>
+        <!-- Indicator lights row -->
+        <g transform="translate(20,105)">
+          <text x="80" y="-5" text-anchor="middle" fill="#9ca3af" font-size="6">Indicadores de Estado</text>
+          <!-- Bomba 1 -->
+          <circle cx="15" cy="12" r="8" fill="#1a3a2a" stroke="#4a5568" stroke-width="1"/>
+          <circle cx="15" cy="12" r="5" fill="#4ade80"><animate attributeName="opacity" values="1;.5;1" dur="2s" repeatCount="indefinite"/></circle>
+          <text x="15" y="28" text-anchor="middle" fill="#9ca3af" font-size="4.5">Bomba 1</text>
+          <!-- Bomba 2 -->
+          <circle cx="50" cy="12" r="8" fill="#1a3a2a" stroke="#4a5568" stroke-width="1"/>
+          <circle cx="50" cy="12" r="5" fill="#4ade80"><animate attributeName="opacity" values="1;.5;1" dur="2.3s" repeatCount="indefinite"/></circle>
+          <text x="50" y="28" text-anchor="middle" fill="#9ca3af" font-size="4.5">Bomba 2</text>
+          <!-- Dosificación -->
+          <circle cx="85" cy="12" r="8" fill="#1a3a2a" stroke="#4a5568" stroke-width="1"/>
+          <circle cx="85" cy="12" r="5" fill="#f59e0b"><animate attributeName="opacity" values="1;.3;1" dur="1.5s" repeatCount="indefinite"/></circle>
+          <text x="85" y="28" text-anchor="middle" fill="#9ca3af" font-size="4.5">Dosif.</text>
+          <!-- Retrolavado -->
+          <circle cx="120" cy="12" r="8" fill="#1a3a2a" stroke="#4a5568" stroke-width="1"/>
+          <circle cx="120" cy="12" r="5" fill="#4a90d9"><animate attributeName="opacity" values=".3;1;.3" dur="3s" repeatCount="indefinite"/></circle>
+          <text x="120" y="28" text-anchor="middle" fill="#9ca3af" font-size="4.5">Retrolav.</text>
+          <!-- Alarma -->
+          <circle cx="155" cy="12" r="8" fill="#1a3a2a" stroke="#4a5568" stroke-width="1"/>
+          <circle cx="155" cy="12" r="5" fill="#6b7280"/>
+          <text x="155" y="28" text-anchor="middle" fill="#9ca3af" font-size="4.5">Alarma</text>
+        </g>
+        <!-- Buttons -->
+        <g transform="translate(20,150)">
+          <!-- Emergency stop -->
+          <circle cx="25" cy="18" r="14" fill="#dc2626" stroke="#991b1b" stroke-width="2"/>
+          <text x="25" y="21" text-anchor="middle" fill="#fff" font-size="5" font-weight="bold">PARO</text>
+          <!-- Start -->
+          <circle cx="70" cy="18" r="10" fill="#15803d" stroke="#166534" stroke-width="1.5"/>
+          <text x="70" y="21" text-anchor="middle" fill="#fff" font-size="5">ON</text>
+          <!-- Mode selector -->
+          <rect x="95" y="5" width="30" height="25" rx="3" fill="#1a2a3a" stroke="#4a5568" stroke-width="1"/>
+          <text x="110" y="15" text-anchor="middle" fill="#4ade80" font-size="5">AUTO</text>
+          <text x="110" y="25" text-anchor="middle" fill="#6b7280" font-size="4">MAN</text>
+          <!-- Selector knob -->
+          <rect x="140" y="8" width="25" height="20" rx="10" fill="#3a3f4b" stroke="#6b7280" stroke-width="1"/>
+          <circle cx="152" cy="18" r="6" fill="#4a5568" stroke="#9ca3af" stroke-width="1">
+            <animateTransform attributeName="transform" type="rotate" from="0 152 18" to="30 152 18" dur="4s" repeatCount="indefinite" values="0 152 18;30 152 18;0 152 18"/>
+          </circle>
+        </g>
+        <!-- Connection lines to processes -->
+        <g transform="translate(20,195)">
+          <text x="80" y="0" text-anchor="middle" fill="#7eb8f0" font-size="6" font-weight="bold">Procesos Controlados</text>
+          <!-- Connection nodes -->
+          <line x1="20" y1="10" x2="20" y2="40" stroke="#4a90d9" stroke-width="1" stroke-dasharray="3,2"><animate attributeName="stroke-opacity" values=".3;1;.3" dur="2s" repeatCount="indefinite"/></line>
+          <line x1="60" y1="10" x2="60" y2="40" stroke="#4a90d9" stroke-width="1" stroke-dasharray="3,2"><animate attributeName="stroke-opacity" values=".3;1;.3" dur="2.3s" repeatCount="indefinite"/></line>
+          <line x1="100" y1="10" x2="100" y2="40" stroke="#4a90d9" stroke-width="1" stroke-dasharray="3,2"><animate attributeName="stroke-opacity" values=".3;1;.3" dur="1.8s" repeatCount="indefinite"/></line>
+          <line x1="140" y1="10" x2="140" y2="40" stroke="#4a90d9" stroke-width="1" stroke-dasharray="3,2"><animate attributeName="stroke-opacity" values=".3;1;.3" dur="2.5s" repeatCount="indefinite"/></line>
+          <text x="20" y="50" text-anchor="middle" fill="#9ca3af" font-size="4.5">Bombeo</text>
+          <text x="60" y="50" text-anchor="middle" fill="#9ca3af" font-size="4.5">MBR</text>
+          <text x="100" y="50" text-anchor="middle" fill="#9ca3af" font-size="4.5">Dosif.</text>
+          <text x="140" y="50" text-anchor="middle" fill="#9ca3af" font-size="4.5">Retrolav.</text>
+        </g>
+      </g>
+      <!-- Signal waves from PLC -->
+      <circle cx="200" cy="145" r="130" fill="none" stroke="#4a90d9" stroke-width=".5" opacity="0"><animate attributeName="r" values="80;160" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values=".3;0" dur="3s" repeatCount="indefinite"/></circle>
+      <circle cx="200" cy="145" r="130" fill="none" stroke="#4a90d9" stroke-width=".5" opacity="0"><animate attributeName="r" values="80;160" dur="3s" begin="1s" repeatCount="indefinite"/><animate attributeName="opacity" values=".3;0" dur="3s" begin="1s" repeatCount="indefinite"/></circle>
+      <circle cx="200" cy="145" r="130" fill="none" stroke="#4a90d9" stroke-width=".5" opacity="0"><animate attributeName="r" values="80;160" dur="3s" begin="2s" repeatCount="indefinite"/><animate attributeName="opacity" values=".3;0" dur="3s" begin="2s" repeatCount="indefinite"/></circle>
+      <!-- Left side labels -->
+      <g transform="translate(10,60)">
+        <text x="35" y="0" text-anchor="middle" fill="#4a90d9" font-size="6">⚡</text>
+        <text x="35" y="12" text-anchor="middle" fill="#9ca3af" font-size="5">Sin intervención</text>
+        <text x="35" y="22" text-anchor="middle" fill="#9ca3af" font-size="5">humana constante</text>
+      </g>
+      <g transform="translate(10,130)">
+        <text x="35" y="0" text-anchor="middle" fill="#4ade80" font-size="6">⟳</text>
+        <text x="35" y="12" text-anchor="middle" fill="#9ca3af" font-size="5">Retrolavado</text>
+        <text x="35" y="22" text-anchor="middle" fill="#9ca3af" font-size="5">automático</text>
+      </g>
+      <g transform="translate(10,200)">
+        <text x="35" y="0" text-anchor="middle" fill="#f59e0b" font-size="6">◉</text>
+        <text x="35" y="12" text-anchor="middle" fill="#9ca3af" font-size="5">Dosificación</text>
+        <text x="35" y="22" text-anchor="middle" fill="#9ca3af" font-size="5">programada</text>
+      </g>
+      <!-- Right side labels -->
+      <g transform="translate(330,80)">
+        <text x="30" y="0" text-anchor="middle" fill="#7eb8f0" font-size="6">📡</text>
+        <text x="30" y="12" text-anchor="middle" fill="#9ca3af" font-size="5">Monitoreo</text>
+        <text x="30" y="22" text-anchor="middle" fill="#9ca3af" font-size="5">24/7</text>
+      </g>
+      <g transform="translate(330,160)">
+        <text x="30" y="0" text-anchor="middle" fill="#4ade80" font-size="6">✓</text>
+        <text x="30" y="12" text-anchor="middle" fill="#9ca3af" font-size="5">Operación</text>
+        <text x="30" y="22" text-anchor="middle" fill="#9ca3af" font-size="5">autónoma</text>
+      </g>
+    </svg>
+  </div>
+</div>
+</section>
+
+</main>
+
+<!-- CONTROLS -->
+<div class="controls" id="controls">
+  <button id="prevBtn" title="Anterior">◀</button>
+  <button id="playBtn" title="Reproducir / Pausar">▶</button>
+  <button id="nextBtn" title="Siguiente">▶</button>
+  <div class="stage-label" id="stageLabel">Etapa 1 / 8</div>
+</div>
+
+<script>
+// ===== PARTICLES =====
+(function(){
+  const c=document.getElementById('particles');
+  for(let i=0;i<30;i++){
+    const s=document.createElement('span');
+    s.style.left=Math.random()*100+'%';
+    s.style.animationDelay=Math.random()*6+'s';
+    s.style.animationDuration=(4+Math.random()*4)+'s';
+    s.style.width=s.style.height=(2+Math.random()*4)+'px';
+    c.appendChild(s);
+  }
+})();
+
+// ===== STAGE MANAGEMENT =====
+const stages=document.querySelectorAll('.stage');
+const totalStages=stages.length;
+let currentStage=0;
+let isPlaying=false;
+let autoTimer=null;
+const AUTOPLAY_INTERVAL=10000;
+
+const progressFill=document.getElementById('progressFill');
+const stageLabel=document.getElementById('stageLabel');
+const playBtn=document.getElementById('playBtn');
+const prevBtn=document.getElementById('prevBtn');
+const nextBtn=document.getElementById('nextBtn');
+const stageNav=document.getElementById('stageNav');
+
+// Build nav dots
+const stageNames=['Captación','Pretratamiento','Ecualización','MBR','Desinfección','Monitoreo','Almacenamiento','Automatización'];
+stageNames.forEach((name,i)=>{
+  const btn=document.createElement('button');
+  btn.innerHTML=`<span class="tooltip">${name}</span>`;
+  btn.addEventListener('click',()=>goToStage(i));
+  stageNav.appendChild(btn);
+});
+const navDots=stageNav.querySelectorAll('button');
+
+function updateUI(){
+  const pct=((currentStage+1)/totalStages)*100;
+  progressFill.style.width=pct+'%';
+  stageLabel.textContent=`Etapa ${currentStage+1} / ${totalStages}`;
+  navDots.forEach((d,i)=>d.classList.toggle('active',i===currentStage));
+  stages.forEach((s,i)=>{
+    s.classList.toggle('visible',i===currentStage);
+  });
+}
+
+function goToStage(idx){
+  if(idx<0) idx=totalStages-1;
+  if(idx>=totalStages) idx=0;
+  currentStage=idx;
+  stages[idx].scrollIntoView({behavior:'smooth',block:'center'});
+  updateUI();
+}
+
+function nextStage(){goToStage(currentStage+1)}
+function prevStage(){goToStage(currentStage-1)}
+
+function togglePlay(){
+  isPlaying=!isPlaying;
+  playBtn.textContent=isPlaying?'⏸':'▶';
+  if(isPlaying){
+    autoTimer=setInterval(nextStage,AUTOPLAY_INTERVAL);
+  }else{
+    clearInterval(autoTimer);
+  }
+}
+
+prevBtn.addEventListener('click',()=>{prevStage();if(isPlaying)togglePlay()});
+nextBtn.addEventListener('click',()=>{nextStage();if(isPlaying)togglePlay()});
+playBtn.addEventListener('click',togglePlay);
+
+// Keyboard
+document.addEventListener('keydown',(e)=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();nextStage();}
+  if(e.key==='ArrowLeft'){e.preventDefault();prevStage();}
+});
+
+// Intersection Observer for scroll-based activation
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      const idx=[...stages].indexOf(entry.target);
+      if(idx!==-1&&idx!==currentStage){
+        currentStage=idx;
+        updateUI();
+      }
+    }
+  });
+},{threshold:0.5});
+stages.forEach(s=>observer.observe(s));
+
+// ===== INTRO =====
+function startPresentation(){
+  document.getElementById('introOverlay').classList.add('hidden');
+  goToStage(0);
+  // Auto-play after start
+  setTimeout(()=>{
+    if(!isPlaying) togglePlay();
+  },1000);
+}
+
+// Initial state
+updateUI();
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
