@@ -32,48 +32,63 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 document.addEventListener('DOMContentLoaded', () => {
-    // Referencias al Menú Lateral
+    // 1. Referencias a los elementos del DOM
     const menuToggle = document.getElementById('menu-toggle');
     const closeMenu = document.getElementById('close-menu');
     const sidebar = document.getElementById('sidebar-menu');
     
-    // Referencias al Modal (Folleto)
     const btnTransparencia = document.getElementById('btn-transparencia');
     const btnInicio = document.getElementById('btn-inicio');
     const modalInfo = document.getElementById('modal-info');
     const closeModal = document.getElementById('close-modal');
 
-    // Abrir menú lateral
-    menuToggle.addEventListener('click', () => {
-        sidebar.style.width = '250px';
-    });
+    // 2. Abrir menú lateral (Hamburguesa)
+    if (menuToggle && sidebar) {
+        menuToggle.addEventListener('click', () => {
+            console.log("¡Clic en hamburguesa detectado!");
+            sidebar.style.width = '250px';
+        });
+    } else {
+        console.error("Error: No se encontró el id 'menu-toggle' o 'sidebar-menu' en el HTML.");
+    }
 
-    // Cerrar menú lateral
-    closeMenu.addEventListener('click', () => {
-        sidebar.style.width = '0';
-    });
+    // 3. Cerrar menú lateral (X)
+    if (closeMenu) {
+        closeMenu.addEventListener('click', () => {
+            sidebar.style.width = '0';
+        });
+    }
 
-    // Cerrar menú al hacer clic en "Inicio"
-    btnInicio.addEventListener('click', (e) => {
-        e.preventDefault();
-        sidebar.style.width = '0';
-    });
+    // 4. Botón de Inicio
+    if (btnInicio) {
+        btnInicio.addEventListener('click', (e) => {
+            e.preventDefault(); // Evita que la página salte
+            sidebar.style.width = '0';
+        });
+    }
 
-    // Abrir Modal de Transparencia desde el menú
-    btnTransparencia.addEventListener('click', (e) => {
-        e.preventDefault();
-        sidebar.style.width = '0'; // Cierra el menú lateral
-        modalInfo.style.display = 'block'; // Muestra el modal
-    });
+    // 5. Botón de Transparencia (Abre el Folleto)
+    if (btnTransparencia && modalInfo) {
+        btnTransparencia.addEventListener('click', (e) => {
+            e.preventDefault(); // Evita que la página salte
+            console.log("¡Abriendo folleto de transparencia!");
+            sidebar.style.width = '0'; // Cierra el menú
+            modalInfo.style.display = 'block'; // Abre el modal
+        });
+    } else {
+        console.error("Error: No se encontró el botón de transparencia o el modal.");
+    }
 
-    // Cerrar Modal desde la "X"
-    closeModal.addEventListener('click', () => {
-        modalInfo.style.display = 'none';
-    });
+    // 6. Cerrar Modal (Folleto)
+    if (closeModal) {
+        closeModal.addEventListener('click', () => {
+            modalInfo.style.display = 'none';
+        });
+    }
 
-    // Cerrar Modal al hacer clic fuera del contenido
+    // 7. Cerrar al hacer clic fuera del cuadro blanco
     window.addEventListener('click', (e) => {
-        if (e.target == modalInfo) {
+        if (e.target === modalInfo) {
             modalInfo.style.display = 'none';
         }
     });
